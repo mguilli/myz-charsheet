@@ -68,6 +68,11 @@ Inputs
 
 /* General */
 
+/*input[type='number']::-webkit-inner-spin-button, 
+input[type='number']::-webkit-outer-spin-button { 
+   opacity: 1;
+}*/
+
 input[type='radio']{ 
    margin: 6px;  
 }
@@ -131,7 +136,11 @@ select {
 }
 
 .sheet-textinput-skills {
-   width: 240px;
+   width: 155px;
+}
+
+.sheet-customskill-attr {
+   width: 50px;
 }
 
 .sheet-textinput-conditions-mutations-talents {
@@ -214,6 +223,16 @@ select {
 /* ----------------------
 Headers, labels and texts
 ------------------------*/
+
+.sheet-skillrow {
+   text-align: center;
+   width: 42px;
+}
+
+.sheet-buttoncont {
+   text-align: center;
+   width: 32px;
+}
 
 .sheet-text-header {
    text-align: left;
