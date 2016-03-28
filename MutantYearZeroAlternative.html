@@ -836,35 +836,6 @@
     </div>
 </div>
 
-// Character Sheet worker scripts
-<script type="text/worker">
-    var trauma = {
-        strength:"damage_max", 
-        agility:"fatigue_max", 
-        wits:"confusion_max", 
-        empathy:"doubt_max"
-    };
-    
-    //
-    on("change:strength change:agility change:wits change:empathy", function(eventInfo) {
-        //set x = name of triggering attribute
-        var x = eventInfo.sourceAttribute;
-        //get value associated with attribute
-        getAttrs([x],function(values){
-            //set target attribute to change = trauma associated with core attribute
-            var targetAttr = trauma[x];
-
-            var attrHash = attrHash || {};  
-            //Set attrHash = {traumatype: value of triggering attribute}, then pass to setAttrs function
-            attrHash[targetAttr] = values[x];
-            setAttrs(attrHash);
-        });
-    });
-    
-    
-</script>
-
-// Ark Sheet
 <div class="sheet-character-wrapper sheet-tab-content sheet-tab-ark-sheet">
     <div class="sheet-meta5">
         <div class="sheet-theark">
@@ -1082,3 +1053,46 @@
         </div>
     </div>
 </div>
+<script type="text/worker">
+    //object reference matching core attribute with the associated trauma type
+    var trauma = {
+        strength:"damage_max", 
+        agility:"fatigue_max", 
+        wits:"confusion_max", 
+        empathy:"doubt_max"
+    };   
+
+    //Change max trauma when core attribute changes
+    on("change:strength change:agility change:wits change:empathy", function(eventInfo) {
+        var x = eventInfo.sourceAttribute;
+        getAttrs([x],function(values){
+            var targetAttr = trauma[x];
+
+            var attrHash = attrHash || {};  
+            attrHash[targetAttr] = values[x];
+            setAttrs(attrHash);
+        });
+    });
+
+    //Ensure max trauma = core attribute when sheet is loaded
+    on("sheet:opened", function() {
+        //create array of attributes from trauma reference var
+        var fetchAttrs = _.keys(trauma).concat(_.values(trauma));
+
+        getAttrs(fetchAttrs, function(attrValues) {
+
+            //pull values from attrValues, split in half, and compare for equality
+            var attrArray = _.values(attrValues)
+            var splitIndex = attrArray.length / 2;
+
+            var i = attrArray.slice(0, splitIndex);
+            var j = attrArray.slice(splitIndex);
+
+            if (!_.isEqual(i,j)) {
+                //Pass object to settAttrs where: keys = max trauma attr and values = core attr values
+                var setTraumaHash = _.object(_.values(trauma),i);
+                setAttrs(setTraumaHash);
+            };
+        });
+    })
+</script>
