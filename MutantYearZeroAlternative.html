@@ -263,15 +263,15 @@
                         <tr class="sheet-row-dark">
                             <td align="center" colspan="2">
                                 <input checked name="attr_rot" type="radio" value="0"> 
-								<input name="attr_rot" type="radio" value="1"> 
-								<input name="attr_rot" type="radio" value="2"> 
-								<input name="attr_rot" type="radio" value="3"> 
-								<input name="attr_rot" type="radio" value="4"> 
-								<input name="attr_rot" type="radio" value="5"> 
-								<input name="attr_rot" type="radio" value="6"> 
-								<input name="attr_rot" type="radio" value="7"> 
-								<input name="attr_rot" type="radio" value="8"> 
-								<input name="attr_rot" type="radio" value="9">
+                                <input name="attr_rot" type="radio" value="1"> 
+                                <input name="attr_rot" type="radio" value="2"> 
+                                <input name="attr_rot" type="radio" value="3"> 
+                                <input name="attr_rot" type="radio" value="4"> 
+                                <input name="attr_rot" type="radio" value="5"> 
+                                <input name="attr_rot" type="radio" value="6"> 
+                                <input name="attr_rot" type="radio" value="7"> 
+                                <input name="attr_rot" type="radio" value="8"> 
+                                <input name="attr_rot" type="radio" value="9">
                             </td>
                         </tr>
                         <tr class="sheet-row-light">
@@ -294,15 +294,15 @@
                         <tr class="sheet-row-dark">
                             <td align="center">
                                 <input checked name="attr_exp" type="radio" value="0"> 
-								<input name="attr_exp" type="radio" value="1"> 
-								<input name="attr_exp" type="radio" value="2"> 
-								<input name="attr_exp" type="radio" value="3"> 
-								<input name="attr_exp" type="radio" value="4"> 
-								<input name="attr_exp" type="radio" value="5"> 
-								<input name="attr_exp" type="radio" value="6"> 
-								<input name="attr_exp" type="radio" value="7"> 
-								<input name="attr_exp" type="radio" value="8"> 
-								<input name="attr_exp" type="radio" value="9">
+                                <input name="attr_exp" type="radio" value="1"> 
+                                <input name="attr_exp" type="radio" value="2"> 
+                                <input name="attr_exp" type="radio" value="3"> 
+                                <input name="attr_exp" type="radio" value="4"> 
+                                <input name="attr_exp" type="radio" value="5"> 
+                                <input name="attr_exp" type="radio" value="6"> 
+                                <input name="attr_exp" type="radio" value="7"> 
+                                <input name="attr_exp" type="radio" value="8"> 
+                                <input name="attr_exp" type="radio" value="9">
                             </td>
                         </tr>
                     </table>
@@ -408,7 +408,7 @@
                             <td class="sheet-text-label">
                                 Description: 
                                 <textarea class="sheet-text-talentmutations" name="attr_talentdescription-1">
-								</textarea>
+                                </textarea>
                             </td>
                         </tr>
                     </table>
@@ -423,7 +423,7 @@
                                 <td class="sheet-text-label">
                                     Description: 
                                     <textarea class="sheet-text-talentmutations" name="attr_talentdescription-1">
-									</textarea>
+                                    </textarea>
                                 </td>
                             </tr>
                         </table>
@@ -445,7 +445,7 @@
                             <td class="sheet-text-label">
                                 Description: 
                                 <textarea class="sheet-text-talentmutations" name="attr_mutationdescription-1">
-								</textarea>
+                                </textarea>
                             </td>
                         </tr>
                     </table>
@@ -460,7 +460,7 @@
                                 <td class="sheet-text-label">
                                     Description: 
                                     <textarea class="sheet-text-talentmutations" name="attr_mutation-description-repeating">
-									</textarea>
+                                    </textarea>
                                 </td>
                             </tr>
                         </table>
@@ -476,15 +476,15 @@
                         <tr class="sheet-row-dark">
                             <td align="center">
                                 <input checked name="attr_mutation" type="radio" value="0"> 
-								<input name="attr_mutation" type="radio" value="1"> 
-								<input name="attr_mutation" type="radio" value="2"> 
-								<input name="attr_mutation" type="radio" value="3"> 
-								<input name="attr_mutation" type="radio" value="4"> 
-								<input name="attr_mutation" type="radio" value="5"> 
-								<input name="attr_mutation" type="radio" value="6"> 
-								<input name="attr_mutation" type="radio" value="7"> 
-								<input name="attr_mutation" type="radio" value="8"> 
-								<input name="attr_mutation" type="radio" value="9">
+                                <input name="attr_mutation" type="radio" value="1"> 
+                                <input name="attr_mutation" type="radio" value="2"> 
+                                <input name="attr_mutation" type="radio" value="3"> 
+                                <input name="attr_mutation" type="radio" value="4"> 
+                                <input name="attr_mutation" type="radio" value="5"> 
+                                <input name="attr_mutation" type="radio" value="6"> 
+                                <input name="attr_mutation" type="radio" value="7"> 
+                                <input name="attr_mutation" type="radio" value="8"> 
+                                <input name="attr_mutation" type="radio" value="9">
                             </td>
                         </tr>
                     </table>
@@ -798,7 +798,7 @@
                             <td class="sheet-text-label" colspan="4">
                                 Description: 
                                 <textarea class="sheet-text-ark-description">
-								</textarea>
+                                </textarea>
                             </td>
                         </tr>
                     </table>
@@ -990,19 +990,45 @@
         </div>
 
         <script type="text/worker">
+            //object reference matching core attribute with the associated trauma type
+            var trauma = {
+                strength:"damage_max", 
+                agility:"fatigue_max", 
+                wits:"confusion_max", 
+                empathy:"doubt_max"
+            };   
+
+            //Change max trauma when core attribute changes
             on("change:strength change:agility change:wits change:empathy", function(eventInfo) {
                 var x = eventInfo.sourceAttribute;
-                var trauma = {
-                    strength:"damage_max", 
-                    agility:"fatigue_max", 
-                    wits:"confusion_max", 
-                    empathy:"doubt_max"
-                };                
                 getAttrs([x],function(values){
-                    var attrHash = attrHash || {};  
                     var targetAttr = trauma[x];
+
+                    var attrHash = attrHash || {};  
                     attrHash[targetAttr] = values[x];
                     setAttrs(attrHash);
                 });
             });
+
+            //Ensure max trauma = core attribute when sheet is loaded
+            on("sheet:opened", function() {
+                //create array of attributes from trauma reference var
+                var fetchAttrs = _.keys(trauma).concat(_.values(trauma));
+
+                getAttrs(fetchAttrs, function(attrValues) {
+
+                    //pull values from attrValues, split in half, and compare for equality
+                    var attrArray = _.values(attrValues)
+                    var splitIndex = attrArray.length / 2;
+
+                    var i = attrArray.slice(0, splitIndex);
+                    var j = attrArray.slice(splitIndex);
+
+                    if (!_.isEqual(i,j)) {
+                        //Pass object to settAttrs where: keys = max trauma attr and values = core attr values
+                        var setTraumaHash = _.object(_.values(trauma),i);
+                        setAttrs(setTraumaHash);
+                    };
+                });
+            })
         </script>
