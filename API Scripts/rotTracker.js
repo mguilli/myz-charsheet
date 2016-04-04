@@ -6,19 +6,47 @@ and to determine probability of a rot attack when grub or water is consumed.
 var mguilli = mguilli || {};
 mguilli.rotten = (function () {
   
-  function handleInput (msg) {
+  function handleInput (msg_orig) {
+    var msg = _.clone(msg_orig);
+
     var isApi = msg.type === 'api',
       args = msg.content.trim().splitArgs(),
       command, arg0, arg1;
 
+    var ch = function (c) {
+        var entities = {
+            '<' : 'lt',
+            '>' : 'gt',
+            "'" : '#39',
+            '@' : '#64',
+            '{' : '#123',
+            '|' : '#124',
+            '}' : '#125',
+            '[' : '#91',
+            ']' : '#93',
+            '"' : 'quot',
+            '-' : 'mdash',
+            ' ' : 'nbsp'
+        };
+
+        if(_.has(entities,c) ){
+            return ('&'+entities[c]+';');
+        }
+        return '';
+    };
+
     var buttonStyle = {
       default: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:dodgerblue;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
       dark: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:black;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
-      danger: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:crimson;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"'
+      danger: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:crimson;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
+      die: 'style="background-color:#44c767;border:1px solid #18ab29;display:inline-block;cursor:pointer;color:#ffffff; font-family:Arial; font-size:10px; padding:2px 6px;text-decoration:none;"'
     };
 
     // Button styler: makeButton({link: href command, css: button.default, display: text to display});
     var makeButton = _.template('<a href="<%= link %>" <%= css %>><%= display %></a> ');
+
+    // Roll result die styler
+    var makeDie = _.template('<div <%= css %>'+'>'+'<%= value %>'+'</div>');
 
     // Initialize rot inventory on state global object
     state.rot = state.rot || {};
@@ -30,7 +58,7 @@ mguilli.rotten = (function () {
     var messageOut = _.template("/w gm "+
       "<div style='border: 1px solid black; background-color: white; padding: 3px 3px;'>"+
         "<%= output %>"+
-      "</div");
+      "</div>");
 
 
     if (isApi) {
@@ -92,18 +120,22 @@ mguilli.rotten = (function () {
 
         };
 
-        // View rot-infested to total grub/water
+        // View rot-infested to total grub/water and make changes to inventory
         if (arg0 === '--inventory') {
           if (_.isEmpty(state.rot)) {
             sendChat('Error', '/w gm No characters have been added to the Rot Roster yet!');
             return;
           };
-
+          var totalGrub = 0, totalWater = 0;
           //Print out all characters in Rot Roster with action button options
           _.each(state.rot, function (char, key) {
+            //Retrieve total resources in character inventory
+            totalGrub = getAttrByName(key,'grub');
+            totalWater = getAttrByName(key, 'water');
+
             output += '<div style="border-top: 1px solid black"><p><strong>'+char.name+':</strong></p>'+
                       '<p>  Grub: '+char.rotGrub+'/'+getAttrByName(key, 'grub')+' '+                          
-                        makeButton({link: '!consume', 
+                        makeButton({link: '!rot-use rotGrub '+key+' '+ch('[')+'[?{Grub used: |'+char.rotGrub+'}d'+totalGrub+'<'+char.rotGrub+']'+ch(']'), 
                           css: buttonStyle.danger, 
                           display: 'Use'})+
                         makeButton({link: '!rot-change rotGrub '+key+' ?{New Value: |'+char.rotGrub+'}', 
@@ -113,8 +145,8 @@ mguilli.rotten = (function () {
                           css: buttonStyle.dark,
                           display: '+/-'})+
                       '</p>'+
-                      '<p>  Water: '+char.rotWater+'/'+getAttrByName(key, 'water')+' '+
-                        makeButton({link: '!consume', 
+                      '<p>  Water: '+char.rotWater+'/'+totalWater+' '+
+                        makeButton({link: '!rot-use rotWater '+key+' '+ch('[')+'[?{Water used: |'+char.rotWater+'}d'+totalWater+'<'+char.rotWater+']'+ch(']'), 
                           css: buttonStyle.danger, 
                           display: 'Use'})+
                         makeButton({link: '!rot-change rotWater '+key+' ?{New Value: |'+char.rotWater+'}', 
@@ -159,7 +191,67 @@ mguilli.rotten = (function () {
       };
 
       // Handle consumption of rot infested resources
-      if (true) {};
+      // Usage: !rot-use rotGrub charID #ofUnits
+      if (command === 'rot-use') {
+        if (arg0 === 'rotGrub' || arg0 === 'rotWater' && arg1 && arg2) {
+
+          var infested = msg.inlinerolls[0].results.total;
+          var rollResults = msg.inlinerolls[0].results.rolls[0].results;
+          var resultsMsg = '';
+          log('Total infested = '+infested);
+          log(rollResults);
+          var permRot = getAttrByName(arg1, 'permanent-rot') || 0;
+          var newRotLevel = Number(infested) + Number(getAttrByName(arg1, 'rot')) + Number(permRot);
+          log('infested: '+infested+' rot: '+getAttrByName(arg1, 'rot')+' permanent-rot: '+permRot);
+          log(newRotLevel);
+
+          // Decrement character rot inventory by number of infested results from die roll
+          state.rot[arg1][arg0] -= infested;
+
+          _.each(rollResults, function (o) {
+            output += makeDie({css: buttonStyle.die, value: o.v})+' ';
+          });
+
+          resultsMsg = '<div style="border-top: 1px solid black"><p><strong>'+state.rot[arg1].name+':</strong></p>'+
+                      '<strong style="color:red;">'+infested+'</strong> infested <strong>'+resource[arg0]+'</strong>'+' have been removed from inventory'+
+                      '<p>'+
+                        'Roll results: '+output+
+                      '</p>'+
+                      '<p>'+
+                        makeButton({link: '!rot-use --damage '+arg1+' '+ch('[')+ch('[')+newRotLevel+'d6<1'+ch(']')+ch(']'),
+                         css: buttonStyle.danger, 
+                         display: 'Roll for Damage'})+
+                        makeButton({link: '!rot --inventory', css: buttonStyle.default, display: 'Return to Inventory'})+
+                      '</p>';
+
+          sendChat('',messageOut({output: resultsMsg}));
+        } else if (arg0 === '--damage') {
+          // Handle damage rolls
+          // Usage: !rot-use --damage charID [[(#infested+#rotpoints+#permanentRotpoints)d6<1]]
+          var rotDamage = msg.inlinerolls[0].results.total;
+          var damageRolls = msg.inlinerolls[0].results.rolls[0].results;
+          var resultsMsg = '';
+
+          _.each(damageRolls, function (o) {
+            output += makeDie({css: buttonStyle.die, value: o.v})+' ';
+          });
+
+          resultsMsg = '<div style="border-top: 1px solid black"><p><strong>'+state.rot[arg1].name+':</strong></p>'+
+                      '<strong style="color:red;">'+rotDamage+'</strong> points of damage have been suffered!'+
+                      '<p>'+
+                        'Roll results: '+output+
+                      '</p>'+
+                      '<p>'+
+                        makeButton({link: '!rot --inventory', 
+                          css: buttonStyle.default, 
+                          display: 'Return to Inventory'})+
+                      '</p>';
+          sendChat('',messageOut({output: resultsMsg}));          
+        } else {
+          sendChat('Error','/w gm Wrong number of arguments entered.')
+        };
+      };
+
 
       // Handle increment/decrement of resources instead of setting the value
       if (true) {};
