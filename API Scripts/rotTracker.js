@@ -5,6 +5,7 @@ and to determine probability of a rot attack when grub or water is consumed.
 
 var mguilli = mguilli || {};
 mguilli.rotten = (function () {
+  'use strict';
   
   function handleInput (msg_orig) {
     var msg = _.clone(msg_orig);
@@ -85,17 +86,17 @@ mguilli.rotten = (function () {
             }
           });
           sendChat("",messageOut({output: output}));
-        };
+        }
 
         if (arg0 === '--rosteradd') {
           if(!arg1) {
             sendChat('Error', '/w gm No character specified!');
             return;
-          };
+          }
 
           if (!state.rot.hasOwnProperty(arg1)) {
             state.rot[arg1] = {};
-            state.rot[arg1]['name'] = getAttrByName(arg1,'character_name');
+            state.rot[arg1].name = getAttrByName(arg1,'character_name');
             
             log('Name = '+getAttrByName(arg1, 'character_name'));
 
@@ -103,29 +104,29 @@ mguilli.rotten = (function () {
             state.rot[arg1].rotGrub = 0;
             sendChat("Success",'/w gm '+getAttrByName(arg1,'character_name')+" has been added to the Rot Roster."+
               makeButton({link: '!rot --roster', css: buttonStyle.default, display: 'Roster'}));
-          };
-        };
+          }
+        }
 
         if (arg0 === '--rosterremove') {
           if (!arg1) {
             sendChat('Error', '/w gm No character specified!');
             return;
-          };
+          }
 
           if(state.rot.hasOwnProperty(arg1)) {
             delete state.rot[arg1];
             sendChat("Success",'/w gm '+getAttrByName(arg1,'character_name')+" has been removed from the Rot Roster."+
               makeButton({link: '!rot --roster', css: buttonStyle.default, display: 'Roster'}));
-          };
+          }
 
-        };
+        }
 
         // View rot-infested to total grub/water and make changes to inventory
         if (arg0 === '--inventory') {
           if (_.isEmpty(state.rot)) {
             sendChat('Error', '/w gm No characters have been added to the Rot Roster yet!');
             return;
-          };
+          }
           var totalGrub = 0, totalWater = 0;
           //Print out all characters in Rot Roster with action button options
           _.each(state.rot, function (char, key) {
@@ -159,8 +160,8 @@ mguilli.rotten = (function () {
           });
 
           sendChat('',messageOut({output: output}));
-        };
-      };
+        }
+      }
 
       // Change a character's Rot inventory
       // Example Format: !change rotGrub characterID newvalue
@@ -178,7 +179,7 @@ mguilli.rotten = (function () {
           // Alert if new rot-infested resource units are greater than total units in character's inventory
           if (arg2 > resourceTotal) {
             alertNotice = '<p><strong>Rot inventory greater than total inventory!!!</strong></p>';
-          };
+          }
 
           output = state.rot[arg1].name+"'s "+arg0+" was changed to: "+arg2+'/'+resourceTotal+alertNotice+' '+
             '<p>'+makeButton({link: '!rot --inventory', css: buttonStyle.default, display: 'Inventory'})+'</p>';
@@ -187,8 +188,8 @@ mguilli.rotten = (function () {
 
         } else {
           sendChat('Error','/w gm Invalid number of arguments.');
-        };
-      };
+        }
+      }
 
       // Handle consumption of rot infested resources
       // Usage: !rot-use rotGrub charID #ofUnits
@@ -248,19 +249,19 @@ mguilli.rotten = (function () {
                       '</p>';
           sendChat('',messageOut({output: resultsMsg}));          
         } else {
-          sendChat('Error','/w gm Wrong number of arguments entered.')
-        };
-      };
+          sendChat('Error','/w gm Wrong number of arguments entered.');
+        }
+      }
 
 
       // Handle increment/decrement of resources instead of setting the value
-      if (true) {};
-    };
-  };
+      if (true) {}
+    }
+  }
 
   function registerEventHandlers() {
     on('chat:message', handleInput);
-  };
+  }
 
   return {
     registerEventHandlers: registerEventHandlers
