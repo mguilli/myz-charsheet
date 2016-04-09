@@ -12,7 +12,7 @@ mguilli.rotten = (function () {
 
     var isApi = msg.type === 'api',
       args = msg.content.trim().splitArgs(),
-      command, arg0, arg1;
+      command, arg0, arg1, arg2;
 
     var ch = function (c) {
         var entities = {
@@ -40,7 +40,8 @@ mguilli.rotten = (function () {
       default: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:dodgerblue;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
       dark: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:black;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
       danger: 'style="-webkit-border-radius: 5;-moz-border-radius: 5;border-radius: 5px;font-family: Arial;color: #ffffff;font-size: 12px;background:crimson;padding: 2px 7px 2px 7px;border: solid black 1px;text-decoration: none;"',
-      die: 'style="background-color:#44c767;border:1px solid #18ab29;display:inline-block;cursor:pointer;color:#ffffff; font-family:Arial; font-size:10px; padding:2px 6px;text-decoration:none;"'
+      die: 'style="background-color:#44c767;border:1px solid #18ab29;display:inline-block;cursor:pointer;color:#ffffff; font-family:Arial; font-size:10px; padding:2px 6px;text-decoration:none;"',
+      failed: 'style="background-color:crimson;border:1px solid #18ab29;display:inline-block;cursor:pointer;color:#ffffff; font-family:Arial; font-size:10px; padding:2px 6px;text-decoration:none;"'
     };
 
     // Button styler: makeButton({link: href command, css: button.default, display: text to display});
@@ -118,7 +119,6 @@ mguilli.rotten = (function () {
             sendChat("Success",'/w gm '+getAttrByName(arg1,'character_name')+" has been removed from the Rot Roster."+
               makeButton({link: '!rot --roster', css: buttonStyle.default, display: 'Roster'}));
           }
-
         }
 
         // View rot-infested to total grub/water and make changes to inventory
@@ -136,7 +136,7 @@ mguilli.rotten = (function () {
 
             output += '<div style="border-top: 1px solid black"><p><strong>'+char.name+':</strong></p>'+
                       '<p>  Grub: '+char.rotGrub+'/'+getAttrByName(key, 'grub')+' '+                          
-                        makeButton({link: '!rot-use rotGrub '+key+' '+ch('[')+'[?{Grub used: |'+char.rotGrub+'}d'+totalGrub+'<'+char.rotGrub+']'+ch(']'), 
+                        makeButton({link: '!rot-use rotGrub '+key+' '+ch('[')+'[?{Grub used: |'+char.rotGrub+'}d100]'+ch(']'), 
                           css: buttonStyle.danger, 
                           display: 'Use'})+
                         makeButton({link: '!rot-change rotGrub '+key+' ?{New Value: |'+char.rotGrub+'}', 
@@ -147,7 +147,7 @@ mguilli.rotten = (function () {
                           display: '+/-'})+
                       '</p>'+
                       '<p>  Water: '+char.rotWater+'/'+totalWater+' '+
-                        makeButton({link: '!rot-use rotWater '+key+' '+ch('[')+'[?{Water used: |'+char.rotWater+'}d'+totalWater+'<'+char.rotWater+']'+ch(']'), 
+                        makeButton({link: '!rot-use rotWater '+key+' '+ch('[')+'[?{Water used: |'+char.rotWater+'}d100]'+ch(']'), 
                           css: buttonStyle.danger, 
                           display: 'Use'})+
                         makeButton({link: '!rot-change rotWater '+key+' ?{New Value: |'+char.rotWater+'}', 
@@ -196,22 +196,61 @@ mguilli.rotten = (function () {
       if (command === 'rot-use') {
         if (arg0 === 'rotGrub' || arg0 === 'rotWater' && arg1 && arg2) {
 
-          var infested = msg.inlinerolls[0].results.total;
           var rollResults = msg.inlinerolls[0].results.rolls[0].results;
+          var totalResource = Number(getAttrByName(arg1, resource[arg0]));
+          var dirtyResource = Number(state.rot[arg1][arg0]);
+          var cleanInventory = totalResource - dirtyResource;
+          var infested = 0;
+          var excess = 0;
+          var probability = 0;
           var resultsMsg = '';
-          log('Total infested = '+infested);
-          log(rollResults);
           var permRot = getAttrByName(arg1, 'permanent-rot') || 0;
-          var newRotLevel = Number(infested) + Number(getAttrByName(arg1, 'rot')) + Number(permRot);
-          log('infested: '+infested+' rot: '+getAttrByName(arg1, 'rot')+' permanent-rot: '+permRot);
-          log(newRotLevel);
+          var newRotLevel = 0;
+          output = '';
+
+          if (rollResults.length > totalResource) {
+            sendChat('Error', '/w gm More resources used than present in inventory!');
+            return;
+          };
+
+          // If number resources used exceeds amount of clean resources in inventory, then some infested resources is definitely used
+          if (rollResults.length > cleanInventory && dirtyResource > 0) {
+            // assign definitely infested used resources to infested var and discard excess roll results
+            excess = rollResults.length - cleanInventory;
+            infested += excess;
+            rollResults = rollResults.slice(0,rollResults.length - infested);
+
+            // lower infested and total resource inventory variables
+            totalResource -= excess;
+            dirtyResource -= excess;
+            // add a failed die to the output string
+            _.times(excess, function () {
+              output += makeDie({css: buttonStyle.failed, value: '1'})+' ';
+            });
+          };
+
+          log('rollResults: ');
+          log(rollResults);
+
+          _.each(rollResults, function (o) {
+            probability = (dirtyResource / totalResource)*100;
+            log('probability: '+probability);
+
+            if (o.v <= probability) {
+              output += makeDie({css: buttonStyle.failed, value: o.v})+' ';
+              dirtyResource -= 1;
+              totalResource -= 1;
+              infested += 1;
+            } else{              
+              output += makeDie({css: buttonStyle.die, value: o.v})+' ';
+              totalResource -= 1;
+            };
+          });
 
           // Decrement character rot inventory by number of infested results from die roll
           state.rot[arg1][arg0] -= infested;
 
-          _.each(rollResults, function (o) {
-            output += makeDie({css: buttonStyle.die, value: o.v})+' ';
-          });
+          newRotLevel = Number(infested) + Number(getAttrByName(arg1, 'rot')) + Number(permRot);
 
           resultsMsg = '<div style="border-top: 1px solid black"><p><strong>'+state.rot[arg1].name+':</strong></p>'+
                       '<strong style="color:red;">'+infested+'</strong> infested <strong>'+resource[arg0]+'</strong>'+' have been removed from inventory'+
@@ -219,9 +258,9 @@ mguilli.rotten = (function () {
                         'Roll results: '+output+
                       '</p>'+
                       '<p>'+
-                        makeButton({link: '!rot-use --damage '+arg1+' '+ch('[')+ch('[')+newRotLevel+'d6<1'+ch(']')+ch(']'),
-                         css: buttonStyle.danger, 
-                         display: 'Roll for Damage'})+
+                        ((infested > 0) ? makeButton({link: '!rot-use --damage '+arg1+' '+ch('[')+ch('[')+newRotLevel+'d6<1'+ch(']')+ch(']'),
+                                                 css: buttonStyle.danger, 
+                                                 display: 'Roll for Damage'}): '')+
                         makeButton({link: '!rot --inventory', css: buttonStyle.default, display: 'Return to Inventory'})+
                       '</p>';
 
@@ -234,7 +273,11 @@ mguilli.rotten = (function () {
           var resultsMsg = '';
 
           _.each(damageRolls, function (o) {
-            output += makeDie({css: buttonStyle.die, value: o.v})+' ';
+            if (o.v === 1) {
+              output += makeDie({css: buttonStyle.failed, value: o.v})+' ';
+            } else{
+              output += makeDie({css: buttonStyle.die, value: o.v})+' ';
+            };
           });
 
           resultsMsg = '<div style="border-top: 1px solid black"><p><strong>'+state.rot[arg1].name+':</strong></p>'+
