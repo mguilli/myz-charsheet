@@ -86,7 +86,7 @@ mguilli.rotten = (function () {
               output += '<p>'+char.get('name')+' '+makeButton({link: '!rot --rosteradd '+char.id, css: buttonStyle.default, display: 'Add'})+'</p>';
             }
           });
-          sendChat("",messageOut({output: output}));
+          sendChat('Rot Roster',messageOut({output: output}));
         }
 
         if (arg0 === '--rosteradd') {
@@ -159,7 +159,7 @@ mguilli.rotten = (function () {
                       '</p></div>';
           });
 
-          sendChat('',messageOut({output: output}));
+          sendChat('Inventory',messageOut({output: output}));
         }
       }
 
@@ -209,7 +209,8 @@ mguilli.rotten = (function () {
           output = '';
 
           if (rollResults.length > totalResource) {
-            sendChat('Error', '/w gm More resources used than present in inventory!');
+            sendChat('Error', '/w gm More resources used than present in inventory!'+
+              '<p>'+makeButton({link: '!rot --inventory', css: buttonStyle.default, display: 'Return to Inventory'})+'</p>');
             return;
           };
 
@@ -257,6 +258,7 @@ mguilli.rotten = (function () {
                       '<p>'+
                         'Roll results: '+output+
                       '</p>'+
+                      '<p>'+(newRotLevel - infested)+' rot points already on character.</p>'+
                       '<p>'+
                         ((infested > 0) ? makeButton({link: '!rot-use --damage '+arg1+' '+ch('[')+ch('[')+newRotLevel+'d6<1'+ch(']')+ch(']'),
                                                  css: buttonStyle.danger, 
